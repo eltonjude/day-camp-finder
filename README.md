@@ -1,32 +1,32 @@
-# Day Camp Finder
+# CampQuest
 
-Add your kids' ages, interests, and personality — enter your town — and this app
-searches the web for day camps near you, then uses Claude to read camp pages and
-grade how well each one fits each child. Results are grouped into camps that work
-for the whole family and camps that are a great individual match for just one kid.
+A warm camp finder for families anywhere in the United States. Tell CampQuest the area, the school-break session, the year, and the dates you hope to cover. It searches the web, chooses a best pick, and lists every other camp with price, dates, and registration information. You can save a camp to **Bookings** and allow a gentle reminder one week before.
 
-## How it works
+## What you can do
 
-- **Frontend** (`src/`): React + Vite + Tailwind. Child profiles are stored in the
-  browser (`localStorage`) — no account needed.
-- **Backend logic**: given a town, it
-  1. Runs a few Brave Search queries to find candidate camp web pages.
-  2. Crawls and extracts text from those pages.
-  3. Sends the page text + your kids' profiles to Claude in a single tool-use call,
-     which extracts structured camp details (ages, cost, transportation, activities)
-     and grades fit per child.
-  4. Returns the graded list, which the frontend groups into "whole family" vs.
-     "just right for [child]" sections.
+- Search a city, ZIP, state, or the whole country
+- Choose Summer Break, Winter Break, Spring Break, Fall Break, Thanksgiving Break, Holiday Break, or year-round
+- See a **best pick** plus every other match
+- Add a camp to bookings from the main menu
+- Allow notifications for a reminder one week before camp (and one week before registration when that date is known)
+- Optionally add children so fit notes can be more personal — search works without them
 
-  This logic is intentionally implemented twice, once per deployment target:
-  - **`server/`** — an Express server, for local development (`npm run dev:all`).
-  - **`api/`** — an Azure Functions app, for deploying to Azure Static Web Apps
-    (its build only packages the `api/` folder in isolation, so it can't share
-    code living outside it).
+All in-app messages are written to feel kind and unhurried.
 
-Camp details are AI-summarized from live web pages and may be incomplete or
-outdated — always verify dates, pricing, and transportation directly with the
-camp before enrolling.
+## How search works
+
+1. Brave Search looks up U.S. camp pages for your area, session, year, and dates.
+2. CampQuest reads those pages.
+3. Claude uses the prompt in [`prompts/camp-search.md`](prompts/camp-search.md) to extract details and choose a best pick. It must not invent prices, dates, or registration information.
+
+The same logic lives in two places so each host can run on its own:
+
+- **`server/`** — Express, for local development (`npm run dev:all`)
+- **`api/`** — Azure Functions, for Azure Static Web Apps
+
+If search keys are not set, CampQuest still returns a clearly labeled **preview** of U.S. camps so you can try bookings and reminders.
+
+To keep building this app in Cursor, use [`prompts/cursor-app-prompt.md`](prompts/cursor-app-prompt.md).
 
 ## Setup
 
@@ -41,61 +41,37 @@ cp server/.env.example server/.env
 - Brave Search API key: https://brave.com/search/api/
 - Anthropic API key: https://console.anthropic.com/
 
-Without these two keys set, the app runs fine but camp search returns a clear
-"not configured" error — child profile management still works.
+Without those keys, family profiles, bookings, and preview search still work.
 
 ## Development
-
-Run the frontend and backend together:
 
 ```bash
 npm run dev:all
 ```
 
-This starts the Vite dev server on `http://localhost:5173` (proxying `/api` to
-the backend) and the Express server on `http://localhost:8787`.
-
-Or run them separately:
+This starts the Vite app on `http://localhost:5173` (proxying `/api` to the backend) and Express on `http://localhost:8787`.
 
 ```bash
-npm run dev        # frontend only
+npm run dev         # frontend only
 npm run dev:server  # backend only
 ```
 
 ## Build
 
 ```bash
-npm run build          # frontend
-npm run build --workspace server   # backend (Express, for local dev)
-cd api && npm install && npm run build   # backend (Azure Functions, for deployment)
+npm run build
+npm run build --workspace server
+cd api && npm install && npm run build
 ```
 
 ## Deploying (free) to Azure Static Web Apps
 
-Azure Static Web Apps has an always-free tier that hosts the built frontend and
-pairs it with the `api/` Azure Functions app as one integrated deployment — no
-separate backend host or CORS config needed, and no local API keys ever leave
-your machine.
+1. Push this repo to GitHub.
+2. In the [Azure Portal](https://portal.azure.com), create a **Static Web App** on the Free plan.
+3. Connect this repository. Build details:
+   - App location: `/`
+   - Api location: `api`
+   - Output location: `dist`
+4. Add application settings `BRAVE_API_KEY` and `ANTHROPIC_API_KEY`.
 
-1. Push this repo to GitHub (already done if you're reading this from the repo).
-2. In the [Azure Portal](https://portal.azure.com), create a new resource →
-   search for **Static Web Apps** → **Create**.
-3. Pick a name and resource group, and select the **Free** plan.
-4. Under **Deployment details**, choose **GitHub**, sign in, and select this
-   repository and the branch you want to deploy.
-5. Under **Build details**, set:
-   - **Build presets**: `Custom` (or `React` if offered)
-   - **App location**: `/`
-   - **Api location**: `api`
-   - **Output location**: `dist`
-6. Click **Review + create** → **Create**. Azure commits a GitHub Actions
-   workflow to the repo and kicks off the first deployment automatically.
-7. Once deployed, go to the Static Web App resource → **Settings** →
-   **Environment variables**, and add:
-   - `BRAVE_API_KEY`
-   - `ANTHROPIC_API_KEY`
-   Save — this redeploys the API with the keys available to it.
-8. Visit the `*.azurestaticapps.net` URL shown on the resource's Overview page.
-
-Every push to the connected branch redeploys automatically via the generated
-GitHub Actions workflow.
+Camp details are summarized from websites and may change. Please confirm dates, prices, and registration with the camp before enrolling.

@@ -13,6 +13,8 @@ export async function braveSearch(query: string, count = 6): Promise<WebResult[]
   const url = new URL('https://api.search.brave.com/res/v1/web/search')
   url.searchParams.set('q', query)
   url.searchParams.set('count', String(count))
+  url.searchParams.set('country', 'US')
+  url.searchParams.set('search_lang', 'en')
 
   const res = await fetch(url, {
     headers: {

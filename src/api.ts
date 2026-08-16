@@ -1,3 +1,4 @@
+import { copy } from './copy'
 import type { SearchCampsRequest, SearchCampsResponse } from './types'
 
 export async function searchCamps(payload: SearchCampsRequest): Promise<SearchCampsResponse> {
@@ -10,7 +11,7 @@ export async function searchCamps(payload: SearchCampsRequest): Promise<SearchCa
   const data = await res.json()
 
   if (!res.ok) {
-    throw new Error(data.error ?? `Search failed (${res.status})`)
+    throw new Error(typeof data.error === 'string' ? data.error : copy.errors.generic)
   }
 
   return data as SearchCampsResponse

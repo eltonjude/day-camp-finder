@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { copy } from '../copy'
 import type { Child } from '../types'
 import { TAG_OPTIONS } from '../types'
 import { ChildForm } from './ChildForm'
@@ -16,8 +17,8 @@ export function ChildList({ kids, onUpdate, onRemove }: ChildListProps) {
 
   if (kids.length === 0) {
     return (
-      <p className="rounded-xl border border-dashed border-slate-300 p-4 text-sm text-slate-500 dark:border-slate-600">
-        No kids added yet. Add one above to start finding camps.
+      <p className="rounded-3xl border border-dashed border-sand-300 bg-white/70 p-5 text-sm leading-relaxed text-ink-soft">
+        {copy.family.empty}
       </p>
     )
   }
@@ -36,28 +37,28 @@ export function ChildList({ kids, onUpdate, onRemove }: ChildListProps) {
               onCancel={() => setEditingId(null)}
             />
           ) : (
-            <div className="flex items-start justify-between rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-800">
+            <div className="flex items-start justify-between rounded-3xl border border-sand-200 bg-white p-5 shadow-sm">
               <div>
-                <p className="font-medium text-slate-900 dark:text-slate-100">
-                  {child.name} <span className="font-normal text-slate-500">· age {child.age}</span>
+                <p className="font-display text-lg text-ink">
+                  {child.name} <span className="font-sans text-sm font-normal text-ink-soft">· age {child.age}</span>
                 </p>
                 {child.traits.length > 0 && (
-                  <div className="mt-1.5 flex flex-wrap gap-1.5">
+                  <div className="mt-2 flex flex-wrap gap-1.5">
                     {child.traits.map((t) => (
-                      <span key={t} className="rounded-full bg-teal-50 px-2 py-0.5 text-xs text-teal-700 dark:bg-teal-900/40 dark:text-teal-300">
+                      <span key={t} className="rounded-full bg-moss/10 px-2.5 py-0.5 text-xs text-moss-dark">
                         {labelFor(t)}
                       </span>
                     ))}
                   </div>
                 )}
-                {child.notes && <p className="mt-1.5 text-sm text-slate-500">{child.notes}</p>}
+                {child.notes && <p className="mt-2 text-sm text-ink-soft">{child.notes}</p>}
               </div>
               <div className="flex shrink-0 gap-3 text-sm">
-                <button onClick={() => setEditingId(child.id)} className="text-teal-600 hover:underline">
-                  Edit
+                <button onClick={() => setEditingId(child.id)} className="text-moss hover:underline">
+                  {copy.family.edit}
                 </button>
-                <button onClick={() => onRemove(child.id)} className="text-red-500 hover:underline">
-                  Remove
+                <button onClick={() => onRemove(child.id)} className="text-clay hover:underline">
+                  {copy.family.remove}
                 </button>
               </div>
             </div>

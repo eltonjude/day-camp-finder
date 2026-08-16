@@ -3,66 +3,83 @@ import { braveSearch } from '../braveSearch'
 import { fetchAll } from '../crawl'
 import { gradeCamps } from '../grade'
 import { labelFor } from '../tags'
-import type { CampSource, Child, SearchCampsRequest, SearchCampsResponse } from '../types'
+import { sessionLabel } from '../campPrompt'
+import { previewSearch } from '../sampleCamps'
+import type { CampSource, SearchCampsRequest, SearchCampsResponse } from '../types'
 
 const MAX_SOURCES = 12
 const RESULTS_PER_QUERY = 5
 
-function buildQueries(town: string, children: Child[]): string[] {
+function buildQueries(request: SearchCampsRequest): string[] {
+  const session = sessionLabel(request.session)
   const queries = [
-    `${town} summer day camps for kids`,
-    `day camps near ${town} bus transportation`,
+    `${request.area} ${session} ${request.year} day camp for kids`,
+    `${request.area} kids camp ${request.year} ${request.dateFrom} ${request.dateTo} registration`,
+    `${request.area} ${session} camp ${request.year} ages price`,
   ]
 
   const interestTags = new Set<string>()
-  for (const child of children) {
+  for (const child of request.children) {
     for (const trait of child.traits) {
       interestTags.add(trait)
     }
   }
   const activityTraits = [...interestTags].slice(0, 2)
   for (const trait of activityTraits) {
-    queries.push(`${town} area ${labelFor(trait)} summer camp for kids`)
+    queries.push(`${request.area} ${labelFor(trait)} ${session} camp ${request.year}`)
   }
 
   return queries.slice(0, 4)
 }
 
+function normalizeRequest(body: Partial<SearchCampsRequest> & { town?: string }): SearchCampsRequest | null {
+  const area = (body.area ?? body.town)?.trim()
+  if (!area) return null
+  return {
+    area,
+    session: body.session?.trim() || 'summer-break',
+    year: Number(body.year) || new Date().getFullYear(),
+    dateFrom: body.dateFrom?.trim() || `${body.year || new Date().getFullYear()}-06-01`,
+    dateTo: body.dateTo?.trim() || `${body.year || new Date().getFullYear()}-06-29`,
+    children: body.children ?? [],
+  }
+}
+
 export async function searchCampsHandler(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-  let body: Partial<SearchCampsRequest>
+  let body: Partial<SearchCampsRequest> & { town?: string }
   try {
-    body = (await request.json()) as Partial<SearchCampsRequest>
+    body = (await request.json()) as Partial<SearchCampsRequest> & { town?: string }
   } catch {
-    return { status: 400, jsonBody: { error: 'Invalid JSON body' } }
-  }
-
-  const town = body.town?.trim()
-  const children = body.children ?? []
-
-  if (!town) {
-    return { status: 400, jsonBody: { error: 'town is required' } }
-  }
-  if (!process.env.BRAVE_API_KEY || !process.env.ANTHROPIC_API_KEY) {
     return {
-      status: 503,
-      jsonBody: {
-        error:
-          'Camp search is not configured. Set BRAVE_API_KEY and ANTHROPIC_API_KEY as Application Settings on this Static Web App.',
-      },
+      status: 400,
+      jsonBody: { error: 'We could not read that request. Would you mind trying the search once more?' },
     }
+  }
+
+  const searchRequest = normalizeRequest(body)
+  if (!searchRequest) {
+    return {
+      status: 400,
+      jsonBody: { error: 'A city, ZIP, or state helps us look in the right place — whenever you’re ready.' },
+    }
+  }
+
+  const keysReady = Boolean(process.env.BRAVE_API_KEY && process.env.ANTHROPIC_API_KEY)
+  if (!keysReady) {
+    return { status: 200, jsonBody: previewSearch(searchRequest) }
   }
 
   const warnings: string[] = []
 
   try {
-    const queries = buildQueries(town, children)
+    const queries = buildQueries(searchRequest)
     const searchResults = await Promise.allSettled(queries.map((q) => braveSearch(q, RESULTS_PER_QUERY)))
 
     const seen = new Set<string>()
     const candidates: { url: string; title: string }[] = []
     for (const result of searchResults) {
       if (result.status === 'rejected') {
-        warnings.push(`A search request failed: ${result.reason?.message ?? result.reason}`)
+        warnings.push('One of our web searches needed a second try. We kept going with the pages we could reach.')
         continue
       }
       for (const r of result.value) {
@@ -77,7 +94,17 @@ export async function searchCampsHandler(request: HttpRequest, context: Invocati
     const pages = await fetchAll(toFetch.map((c) => c.url))
 
     if (pages.length === 0) {
-      warnings.push('No camp web pages could be read. Try a more specific town name.')
+      const preview = previewSearch(searchRequest)
+      return {
+        status: 200,
+        jsonBody: {
+          ...preview,
+          warnings: [
+            'We could not read camp pages just now, so we’re sharing a careful preview instead. You’re not doing anything wrong.',
+            ...(preview.warnings ?? []),
+          ],
+        },
+      }
     }
 
     const sources: CampSource[] = pages.map((p, i) => ({
@@ -86,20 +113,37 @@ export async function searchCampsHandler(request: HttpRequest, context: Invocati
       title: p.title || toFetch.find((c) => c.url === p.url)?.title,
     }))
 
-    const camps = await gradeCamps(town, children, sources, pages)
+    const graded = await gradeCamps(searchRequest, searchRequest.children, sources, pages)
 
     const response: SearchCampsResponse = {
-      town,
+      area: searchRequest.area,
+      session: searchRequest.session,
+      year: searchRequest.year,
+      dateFrom: searchRequest.dateFrom,
+      dateTo: searchRequest.dateTo,
       generatedAt: new Date().toISOString(),
       sources,
-      camps,
+      camps: graded.camps,
+      bestPickName: graded.bestPickName,
+      bestPickReason: graded.bestPickReason,
       warnings: warnings.length ? warnings : undefined,
     }
     return { status: 200, jsonBody: response }
   } catch (err) {
     context.error(err)
+    const preview = previewSearch(searchRequest)
     const message = err instanceof Error ? err.message : 'Unknown error'
-    return { status: 500, jsonBody: { error: message } }
+    return {
+      status: 200,
+      jsonBody: {
+        ...preview,
+        warnings: [
+          'Something got in the way of the live search, so we’re showing a kind preview instead. You’re not doing anything wrong.',
+          message,
+          ...(preview.warnings ?? []),
+        ],
+      },
+    }
   }
 }
 

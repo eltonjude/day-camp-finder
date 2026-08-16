@@ -7,7 +7,6 @@ export interface TagOption {
 // Shared vocabulary used by both children (interests/personality) and camps (tags),
 // so overlap between the two can be scored directly.
 export const TAG_OPTIONS: TagOption[] = [
-  // Activities
   { id: 'sports', label: 'Sports & Team Games', category: 'activity' },
   { id: 'swimming', label: 'Swimming & Water Play', category: 'activity' },
   { id: 'arts-crafts', label: 'Arts & Crafts', category: 'activity' },
@@ -23,7 +22,6 @@ export const TAG_OPTIONS: TagOption[] = [
   { id: 'games-puzzles', label: 'Games & Puzzles', category: 'activity' },
   { id: 'academics', label: 'Academic Enrichment', category: 'activity' },
   { id: 'ropes-course', label: 'Ropes Course & Climbing', category: 'activity' },
-  // Personality / vibe fit
   { id: 'energetic', label: 'Energetic / Active', category: 'vibe' },
   { id: 'calm-quiet', label: 'Calm / Quiet', category: 'vibe' },
   { id: 'social-team', label: 'Social / Team-Oriented', category: 'vibe' },
@@ -40,14 +38,14 @@ export interface Child {
   id: string
   name: string
   age: number
-  traits: string[] // ids from TAG_OPTIONS (both categories allowed)
+  traits: string[]
   notes?: string
 }
 
 export interface ChildFit {
   childId: string
   eligible: boolean
-  score: number // 0-100
+  score: number
   reasoning: string
 }
 
@@ -64,24 +62,59 @@ export interface CampResult {
   ageMin?: number
   ageMax?: number
   weeksOrDates?: string
+  startDate?: string
+  endDate?: string
   costPerWeek?: string
+  price?: string
+  registrationStartDate?: string
+  registrationNotes?: string
   transportationOffered?: boolean
   transportationDetails?: string
   tags?: string[]
   summary: string
   sourceIds: string[]
   childFit: ChildFit[]
+  dateFitNote?: string
+  isBestPick?: boolean
 }
 
 export interface SearchCampsResponse {
-  town: string
+  area: string
+  session: string
+  year: number
+  dateFrom: string
+  dateTo: string
   generatedAt: string
   sources: CampSource[]
   camps: CampResult[]
+  bestPickName?: string
+  bestPickReason?: string
+  preview?: boolean
   warnings?: string[]
 }
 
 export interface SearchCampsRequest {
-  town: string
+  area: string
+  session: string
+  year: number
+  dateFrom: string
+  dateTo: string
   children: Child[]
 }
+
+export interface Booking {
+  id: string
+  camp: CampResult
+  sources: CampSource[]
+  area: string
+  session: string
+  year: number
+  dateFrom: string
+  dateTo: string
+  notify: boolean
+  createdAt: string
+  campRemindedAt?: string
+  registrationRemindedAt?: string
+}
+
+export type AppTab = 'find' | 'bookings' | 'family'
