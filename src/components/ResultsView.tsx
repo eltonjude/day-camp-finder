@@ -1,74 +1,68 @@
+import { copy } from '../copy'
 import type { Child, SearchCampsResponse } from '../types'
-import { groupCamps } from '../utils/grouping'
+import { chooseBestCamp, otherCamps } from '../utils/ranking'
 import { CampCard } from './CampCard'
 
 interface ResultsViewProps {
   results: SearchCampsResponse
   kids: Child[]
+  isBooked: (campName: string) => boolean
+  onAdd: (campName: string) => void
 }
 
-export function ResultsView({ results, kids }: ResultsViewProps) {
-  const { familyMatches, individualMatches } = groupCamps(results.camps, kids)
-  const hasAnyMatches = familyMatches.length > 0 || individualMatches.length > 0
+export function ResultsView({ results, kids, isBooked, onAdd }: ResultsViewProps) {
+  const best = chooseBestCamp(results, kids)
+  const others = otherCamps(results, best)
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-10">
       {results.warnings && results.warnings.length > 0 && (
-        <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
-          {results.warnings.map((w, i) => (
-            <p key={i}>{w}</p>
+        <div className="rounded-2xl border border-sun/40 bg-sun/10 p-4 text-sm text-ink">
+          {results.warnings.map((w) => (
+            <p key={w}>{w}</p>
           ))}
         </div>
       )}
 
-      {!hasAnyMatches && (
-        <p className="text-sm text-slate-500">
-          No strong matches found among {results.camps.length} camp{results.camps.length === 1 ? '' : 's'} discovered near{' '}
-          {results.town}. Try broadening your kids' interests, or check the camps below.
-        </p>
-      )}
+      {results.camps.length === 0 && <p className="text-sm leading-relaxed text-ink-soft">{copy.results.empty}</p>}
 
-      {familyMatches.length > 0 && (
+      {best && (
         <section>
-          <h2 className="mb-3 text-lg font-semibold text-slate-900 dark:text-slate-100">
-            🏕️ Great for the whole family
-          </h2>
-          <div className="grid gap-3 sm:grid-cols-2">
-            {familyMatches.map((camp, i) => (
-              <CampCard key={`family-${i}`} camp={camp} sources={results.sources} kids={kids} />
+          <p className="mb-1 text-xs font-semibold uppercase tracking-[0.2em] text-clay">{copy.results.bestPickTitle}</p>
+          <h2 className="mb-2 font-display text-2xl text-ink">{best.name}</h2>
+          {results.bestPickReason && (
+            <p className="mb-4 max-w-2xl text-sm leading-relaxed text-ink-soft">{results.bestPickReason}</p>
+          )}
+          <CampCard
+            camp={best}
+            sources={results.sources}
+            kids={kids}
+            featured
+            booked={isBooked(best.name)}
+            onAdd={() => onAdd(best.name)}
+          />
+        </section>
+      )}
+
+      {others.length > 0 && (
+        <section>
+          <h2 className="mb-4 font-display text-2xl text-ink">{copy.results.othersTitle}</h2>
+          <div className="grid gap-4 lg:grid-cols-2">
+            {others.map((camp) => (
+              <CampCard
+                key={camp.name}
+                camp={camp}
+                sources={results.sources}
+                kids={kids}
+                booked={isBooked(camp.name)}
+                onAdd={() => onAdd(camp.name)}
+              />
             ))}
           </div>
         </section>
       )}
 
-      {individualMatches.map(({ child, camps }) => (
-        <section key={child.id}>
-          <h2 className="mb-3 text-lg font-semibold text-slate-900 dark:text-slate-100">
-            ⭐ Just right for {child.name}
-          </h2>
-          <div className="grid gap-3 sm:grid-cols-2">
-            {camps.map((camp, i) => (
-              <CampCard key={`${child.id}-${i}`} camp={camp} sources={results.sources} kids={kids} highlightChildId={child.id} />
-            ))}
-          </div>
-        </section>
-      ))}
-
-      {results.camps.length > 0 && (
-        <details className="text-sm text-slate-500">
-          <summary className="cursor-pointer">All {results.camps.length} camps found (including weaker matches)</summary>
-          <div className="mt-3 grid gap-3 sm:grid-cols-2">
-            {results.camps.map((camp, i) => (
-              <CampCard key={`all-${i}`} camp={camp} sources={results.sources} kids={kids} />
-            ))}
-          </div>
-        </details>
-      )}
-
-      <p className="text-xs text-slate-400">
-        Details are AI-summarized from camp websites and may be incomplete or out of date — always verify dates,
-        pricing, and transportation directly with the camp before enrolling.
-      </p>
+      <p className="text-xs leading-relaxed text-ink-soft">{copy.results.verify}</p>
     </div>
   )
 }

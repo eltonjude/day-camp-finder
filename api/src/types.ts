@@ -26,24 +26,56 @@ export interface CampResult {
   ageMin?: number
   ageMax?: number
   weeksOrDates?: string
+  startDate?: string
+  endDate?: string
   costPerWeek?: string
+  price?: string
+  registrationStartDate?: string
+  registrationNotes?: string
   transportationOffered?: boolean
   transportationDetails?: string
   tags?: string[]
   summary: string
   sourceIds: string[]
   childFit: ChildFit[]
+  dateFitNote?: string
+  isBestPick?: boolean
 }
 
 export interface SearchCampsResponse {
-  town: string
+  area: string
+  session: string
+  year: number
+  dateFrom: string
+  dateTo: string
   generatedAt: string
   sources: CampSource[]
   camps: CampResult[]
+  bestPickName?: string
+  bestPickReason?: string
+  preview?: boolean
   warnings?: string[]
 }
 
 export interface SearchCampsRequest {
-  town: string
+  area: string
+  session: string
+  year: number
+  dateFrom: string
+  dateTo: string
   children: Child[]
+}
+
+export interface SearchCriteria {
+  area: string
+  session: string
+  year: number
+  dateFrom: string
+  dateTo: string
+}
+
+export interface GradeResult {
+  camps: CampResult[]
+  bestPickName?: string
+  bestPickReason?: string
 }

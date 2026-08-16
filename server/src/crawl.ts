@@ -17,7 +17,7 @@ export async function fetchPageText(url: string): Promise<CrawledPage | null> {
     const res = await fetch(url, {
       signal: controller.signal,
       headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; DayCampFinderBot/1.0; +https://example.com/bot)',
+        'User-Agent': 'Mozilla/5.0 (compatible; CampQuestBot/1.0; +https://example.com/bot)',
         Accept: 'text/html,application/xhtml+xml',
       },
     })

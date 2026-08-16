@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { Child } from '../types'
 
-const STORAGE_KEY = 'day-camp-finder:children'
+const STORAGE_KEY = 'campquest:children'
 
 function load(): Child[] {
   try {
