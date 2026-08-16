@@ -2,7 +2,10 @@ import type { CampResult, CampSource, Child, ChildFit, SearchCampsRequest, Searc
 import { sessionLabel } from './campPrompt.js'
 
 interface SampleCamp extends Omit<CampResult, 'childFit' | 'sourceIds' | 'isBestPick'> {
+  // State codes, state names, city names, and ZIP prefixes this camp serves.
   regions: string[]
+  // Chains that run in most U.S. metros, so they stay relevant for any area.
+  nationwide?: boolean
   source: CampSource
 }
 
@@ -25,7 +28,7 @@ const SAMPLES: SampleCamp[] = [
     summary:
       'A classic city day camp beside the springs, with swimming, crafts, and unhurried outdoor play. Staff are used to Texas heat and build in plenty of water time.',
     dateFitNote: 'Weekly summer sessions make it easy to choose the weeks that match your calendar.',
-    regions: ['tx', 'texas', 'austin', '787', 'anywhere', 'united states', 'us'],
+    regions: ['tx', 'texas', 'austin', '787'],
     source: { id: 'P1', url: 'https://www.austintexas.gov/department/parks-and-recreation', title: 'Austin Parks & Recreation' },
   },
   {
@@ -45,7 +48,7 @@ const SAMPLES: SampleCamp[] = [
     summary:
       'A city-run summer camp that treats Central Park as the playground — games, nature walks, and plenty of shade. A familiar, community-minded choice for Manhattan and nearby boroughs.',
     dateFitNote: 'July weeks line up well with a mid-summer break.',
-    regions: ['ny', 'new york', 'manhattan', 'brooklyn', 'queens', '100', '112', 'anywhere', 'united states', 'us'],
+    regions: ['ny', 'new york', 'nyc', 'manhattan', 'brooklyn', 'queens', '100', '112'],
     source: { id: 'P2', url: 'https://www.nycgovparks.org/programs/recreation/camps', title: 'NYC Parks Camps' },
   },
   {
@@ -66,7 +69,7 @@ const SAMPLES: SampleCamp[] = [
     summary:
       'Fog-kissed mornings and art under the trees in Golden Gate Park. A gentle pace with room for both quiet makers and kids who want to roam.',
     dateFitNote: 'Flexible summer weeks, including the heart of June.',
-    regions: ['ca', 'california', 'san francisco', 'sf', '941', 'bay area', 'anywhere', 'united states', 'us'],
+    regions: ['ca', 'california', 'san francisco', 'sf', '941', 'bay area'],
     source: { id: 'P3', url: 'https://sfrecpark.org/', title: 'SF Rec & Park' },
   },
   {
@@ -86,7 +89,7 @@ const SAMPLES: SampleCamp[] = [
     summary:
       'A lakeside nature camp with pond dipping, simple field science, and time on the grass. It feels like a small breath of woods inside the city.',
     dateFitNote: 'Two-week blocks can be chosen to sit inside your requested dates.',
-    regions: ['il', 'illinois', 'chicago', '606', 'anywhere', 'united states', 'us'],
+    regions: ['il', 'illinois', 'chicago', '606'],
     source: { id: 'P4', url: 'https://www.chicagoparkdistrict.com/', title: 'Chicago Park District' },
   },
   {
@@ -106,7 +109,7 @@ const SAMPLES: SampleCamp[] = [
     summary:
       'A bright beach week with swimming, sand games, and lots of sunscreen reminders. Best for kids who are happiest near the water.',
     dateFitNote: 'Summer beach weeks cover most of June and July.',
-    regions: ['fl', 'florida', 'miami', 'key biscayne', '331', 'anywhere', 'united states', 'us'],
+    regions: ['fl', 'florida', 'miami', 'key biscayne', '331'],
     source: { id: 'P5', url: 'https://www.miamidade.gov/parks/', title: 'Miami-Dade Parks' },
   },
   {
@@ -127,7 +130,7 @@ const SAMPLES: SampleCamp[] = [
     summary:
       'A lively sports camp with rotating games, water breaks, and a kind coaching style. Good for kids who like to move and make friends quickly.',
     dateFitNote: 'The season opens on June 1, which matches many summer-break calendars.',
-    regions: ['co', 'colorado', 'denver', '802', 'anywhere', 'united states', 'us'],
+    regions: ['co', 'colorado', 'denver', '802'],
     source: { id: 'P6', url: 'https://www.denvergov.org/Government/Agencies-Departments-Offices/Parks-Recreation', title: 'Denver Parks & Recreation' },
   },
   {
@@ -147,7 +150,7 @@ const SAMPLES: SampleCamp[] = [
     summary:
       'Trails, tide-pool looking, and picnic lunches at one of Seattle’s wilder parks. Counselors keep the groups small enough that quieter kids can settle in.',
     dateFitNote: 'Late-June start suits families who need a little time after school ends.',
-    regions: ['wa', 'washington', 'seattle', '981', 'anywhere', 'united states', 'us'],
+    regions: ['wa', 'washington', 'seattle', '981'],
     source: { id: 'P7', url: 'https://www.seattle.gov/parks', title: 'Seattle Parks' },
   },
   {
@@ -167,7 +170,7 @@ const SAMPLES: SampleCamp[] = [
     summary:
       'Hands-on science days inside the museum during school breaks. A thoughtful pick for winter, spring, or a single summer week when you want indoor wonder.',
     dateFitNote: 'Vacation-week sessions are offered across the year, including winter and spring break.',
-    regions: ['ma', 'massachusetts', 'boston', 'cambridge', '021', 'anywhere', 'united states', 'us'],
+    regions: ['ma', 'massachusetts', 'boston', 'cambridge', '021'],
     source: { id: 'P8', url: 'https://www.mos.org/', title: 'Museum of Science' },
   },
   {
@@ -187,7 +190,7 @@ const SAMPLES: SampleCamp[] = [
     summary:
       'Paint, clay, and a little music in the park. The days are colorful without being loud, and families often praise how gently new campers are welcomed.',
     dateFitNote: 'June and July weeks sit comfortably inside a typical summer break.',
-    regions: ['ga', 'georgia', 'atlanta', '303', 'anywhere', 'united states', 'us'],
+    regions: ['ga', 'georgia', 'atlanta', '303'],
     source: { id: 'P9', url: 'https://www.atlantaga.gov/government/departments/parks-recreation', title: 'Atlanta Parks' },
   },
   {
@@ -208,7 +211,7 @@ const SAMPLES: SampleCamp[] = [
     summary:
       'A friendly neighborhood camp with playground time, crafts, and a ride on the park train when the group earns it. Easy to love for younger campers.',
     dateFitNote: 'Weekly enrollment from mid-June onward.',
-    regions: ['nc', 'north carolina', 'raleigh', 'durham', '276', 'anywhere', 'united states', 'us'],
+    regions: ['nc', 'north carolina', 'raleigh', 'durham', '276'],
     source: { id: 'P10', url: 'https://raleighnc.gov/parks', title: 'Raleigh Parks' },
   },
   {
@@ -228,7 +231,8 @@ const SAMPLES: SampleCamp[] = [
     summary:
       'A familiar, community-rooted day camp you can find in most U.S. cities. Swimming, games, and a staff who know the neighborhood — always worth calling your local Y.',
     dateFitNote: 'Local branches usually offer weeks that can be matched to your break.',
-    regions: ['anywhere', 'united states', 'us', 'usa'],
+    regions: [],
+    nationwide: true,
     source: { id: 'P11', url: 'https://www.ymca.org/what-we-do/youth-development/camps', title: 'YMCA Camps' },
   },
   {
@@ -248,7 +252,8 @@ const SAMPLES: SampleCamp[] = [
     summary:
       'A focused coding and game-design week on a college campus. A strong match for kids who light up around computers and like a clear daily plan.',
     dateFitNote: 'One-week summer sessions can be chosen to sit inside your date window.',
-    regions: ['anywhere', 'united states', 'us', 'usa', 'ca', 'tx', 'ny', 'ma', 'il', 'wa'],
+    regions: [],
+    nationwide: true,
     source: { id: 'P12', url: 'https://www.idtech.com/', title: 'iD Tech' },
   },
 ]
@@ -257,11 +262,32 @@ function normalize(value: string): string {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()
 }
 
+function isWholeCountry(area: string): boolean {
+  const hay = normalize(area)
+  if (!hay) return true
+  const words = hay.split(' ')
+  return (
+    hay.includes('united states') ||
+    words.includes('anywhere') ||
+    words.includes('everywhere') ||
+    words.includes('us') ||
+    words.includes('usa') ||
+    words.includes('nationwide')
+  )
+}
+
+// Matches on whole words and ZIP prefixes so a city like "Austin" is never
+// treated as containing a code such as "us".
 function areaMatches(camp: SampleCamp, area: string): boolean {
   const hay = normalize(area)
   if (!hay) return true
-  if (hay.includes('anywhere') || hay === 'us' || hay === 'usa' || hay.includes('united states')) return true
-  return camp.regions.some((region) => hay.includes(region) || region.includes(hay))
+  const words = hay.split(' ')
+
+  return camp.regions.some((region) => {
+    if (region.includes(' ')) return hay.includes(region)
+    if (/^\d+$/.test(region)) return words.some((word) => /^\d+$/.test(word) && word.startsWith(region))
+    return words.includes(region)
+  })
 }
 
 function scoreChild(camp: SampleCamp, child: Child): ChildFit {
@@ -278,8 +304,13 @@ function scoreChild(camp: SampleCamp, child: Child): ChildFit {
 }
 
 export function previewSearch(request: SearchCampsRequest): SearchCampsResponse {
-  const matched = SAMPLES.filter((camp) => areaMatches(camp, request.area))
-  const pool = matched.length > 0 ? matched : SAMPLES.filter((camp) => camp.regions.includes('anywhere'))
+  const nationwide = SAMPLES.filter((camp) => camp.nationwide)
+  const local = isWholeCountry(request.area)
+    ? SAMPLES.filter((camp) => !camp.nationwide)
+    : SAMPLES.filter((camp) => !camp.nationwide && areaMatches(camp, request.area))
+
+  // Local matches lead so the best pick belongs to the area that was searched.
+  const pool = [...local, ...nationwide]
 
   const sources = pool.map((camp) => camp.source)
   const camps: CampResult[] = pool.map((camp) => ({
